@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORTRESS - Operations Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #050709;
+    --surface: #0a0e14;
+    --border: #1a1e28;
+    --text: #c8c8c8;
+    --text-dim: #666;
+    --amber: #c8a03c;
+    --amber-dim: rgba(200, 160, 60, 0.15);
+    --red: #e74c3c;
+    --green: #4ae168;
+    --cyan: #4ac8e1;
+    --blue: #4a7ae1;
+    --zone-dmz: #e74c3c;
+    --zone-app: #c8a03c;
+    --zone-data: #4ae168;
+    --zone-admin: #4a7ae1;
+    --radius: 2px;
+    --font: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Tactical background overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url('docker/nginx/static/bg-tactical.svg');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Layout */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 240px 1fr 320px;
+    grid-template-rows: 48px 1fr;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  .dashboard.sidebar-collapsed {
+    grid-template-columns: 56px 1fr 320px;
+  }
+
+  /* Top bar */
+  .topbar {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .logo img {
+    height: 24px;
+  }
+
+  .logo-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--amber);
+    letter-spacing: 4px;
+  }
+
+  .sidebar-collapsed .logo-text { display: none; }
+
+  .topbar-status {
+    margin-left: auto;
+    display: flex;
+    gap: 24px;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .topbar-status .live {
+    color: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .threat-level {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+  }
+
+  .threat-bar {
+    width: 80px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .threat-fill {
+    height: 100%;
+    width: 15%;
+    background: var(--green);
+    transition: width 0.5s, background 0.5s;
+  }
+
+  .threat-fill.elevated { background: var(--amber); }
+  .threat-fill.critical { background: var(--red); }
+
+  .topbar-user {
+    font-size: 11px;
+    color: var(--amber);
+    cursor: pointer;
+  }
+
+  /* Left sidebar - Zone cards */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: width 0.2s;
+  }
+
+  .zone-card {
+    background: rgba(10, 14, 20, 0.8);
+    border: 1px solid var(--border);
+    border-left: 3px solid;
+    padding: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: var(--radius);
+  }
+
+  .zone-card:hover, .zone-card.active {
+    background: rgba(20, 25, 35, 0.9);
+  }
+
+  .zone-card.active {
+    border-color: var(--border);
+  }
+
+  .zone-card[data-zone="dmz"] { border-left-color: var(--zone-dmz); }
+  .zone-card[data-zone="app"] { border-left-color: var(--zone-app); }
+  .zone-card[data-zone="data"] { border-left-color: var(--zone-data); }
+  .zone-card[data-zone="admin"] { border-left-color: var(--zone-admin); }
+
+  .zone-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .zone-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+  }
+
+  .zone-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .zone-card[data-zone="dmz"] .zone-name { color: var(--zone-dmz); }
+  .zone-card[data-zone="app"] .zone-name { color: var(--zone-app); }
+  .zone-card[data-zone="data"] .zone-name { color: var(--zone-data); }
+  .zone-card[data-zone="admin"] .zone-name { color: var(--zone-admin); }
+
+  .zone-meta {
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .zone-meta .subnet { color: var(--text-dim); }
+
+  .zone-services {
+    margin-top: 6px;
+    font-size: 10px;
+    color: #555;
+  }
+
+  .sidebar-collapsed .zone-meta,
+  .sidebar-collapsed .zone-services,
+  .sidebar-collapsed .zone-name { display: none; }
+
+  .sidebar-collapsed .zone-card {
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar-collapsed .zone-header {
+    margin-bottom: 0;
+  }
+
+  /* Sidebar section label */
+  .sidebar-label {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 4px 0;
+  }
+
+  .sidebar-collapsed .sidebar-label { display: none; }
+
+  /* Main content */
+  .main {
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Metrics row */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  .metric-label {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--amber);
+  }
+
+  .metric-change {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+
+  .metric-change.up { color: var(--green); }
+  .metric-change.down { color: var(--red); }
+
+  /* Traffic matrix */
+  .section-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .matrix-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .matrix th, .matrix td {
+    padding: 8px 12px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .matrix th {
+    background: rgba(200, 160, 60, 0.05);
+    color: var(--amber);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+
+  .matrix .allow { color: var(--green); }
+  .matrix .deny { color: var(--red); }
+  .matrix .limit { color: var(--amber); }
+  .matrix .self { color: #333; }
+
+  /* Audit log */
+  .log-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    flex: 1;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .log-header .section-title { margin-bottom: 0; }
+
+  .log-clear {
+    font-size: 10px;
+    color: var(--text-dim);
+    cursor: pointer;
+    background: none;
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+    font-family: var(--font);
+    border-radius: var(--radius);
+  }
+
+  .log-clear:hover { border-color: var(--amber); color: var(--amber); }
+
+  .log-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 14px;
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .log-entry {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .log-entry .time { color: #444; }
+  .log-entry .src { color: var(--cyan); }
+  .log-entry .action-allow { color: var(--green); }
+  .log-entry .action-deny { color: var(--red); }
+  .log-entry .action-limit { color: var(--amber); }
+
+  /* Right sidebar */
+  .right-sidebar {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .panel-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--amber);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .panel-body {
+    padding: 14px;
+  }
+
+  /* RBAC tester */
+  .rbac-field {
+    margin-bottom: 10px;
+  }
+
+  .rbac-field label {
+    display: block;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .rbac-field select {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 11px;
+    border-radius: var(--radius);
+    outline: none;
+  }
+
+  .rbac-field select:focus { border-color: var(--amber); }
+
+  .btn-check {
+    width: 100%;
+    padding: 8px;
+    background: rgba(200, 160, 60, 0.1);
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+  }
+
+  .btn-check:hover { background: rgba(200, 160, 60, 0.15); }
+
+  .rbac-result {
+    padding: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    min-height: 40px;
+    border-radius: var(--radius);
+  }
+
+  .rbac-result.allowed { border-color: var(--green); color: var(--green); }
+  .rbac-result.denied { border-color: var(--red); color: var(--red); }
+
+  /* Permissions table */
+  .perms-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .perms-table th, .perms-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .perms-table th {
+    color: var(--text-dim);
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .perm-yes { color: var(--green); }
+  .perm-no { color: #333; }
+
+  /* Fail2ban bans */
+  .ban-list {
+    font-size: 11px;
+  }
+
+  .ban-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ban-ip { color: var(--red); }
+  .ban-time { color: var(--text-dim); font-size: 10px; }
+
+  .no-bans { color: #333; font-size: 11px; font-style: italic; }
+
+  /* Keyboard shortcut hint */
+  .kbd-hints {
+    position: fixed;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    font-size: 9px;
+    color: #333;
+    z-index: 10;
+  }
+
+  .kbd-hints kbd {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-family: var(--font);
+    color: #555;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1a1e28; border-radius: 2px; }
+</style>
+</head>
+<body>
+  <!-- Auth gate: redirect to login if no token -->
+  <script>
+    if (!sessionStorage.getItem('fortress_token')) {
+      window.location.href = 'docker/nginx/static/login.html';
+    }
+  </script>
+
+  <div class="dashboard" id="dashboard">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="logo" id="logoToggle" title="Toggle sidebar (or press S)">
+        <img src="docker/nginx/static/logo-fortress.svg" alt="FORTRESS" class="logo-img">
+        <span class="logo-text">FORTRESS</span>
+      </div>
+      <div class="threat-level">
+        <span style="color: var(--text-dim)">THREAT</span>
+        <div class="threat-bar"><div class="threat-fill" id="threatFill"></div></div>
+        <span id="threatLabel" style="color: var(--green)">LOW</span>
+      </div>
+      <div class="topbar-status">
+        <span class="live">LIVE</span>
+        <span id="clock"></span>
+      </div>
+      <div class="topbar-user" id="userBadge" title="Click to logout"></div>
+    </div>
+
+    <!-- Left sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-label">Network Zones</div>
+
+      <div class="zone-card active" data-zone="dmz" id="zone-1">
+        <div class="zone-header">
+          <img src="docker/nginx/static/icon-dmz.svg" alt="" class="zone-icon">
+          <span class="zone-name">DMZ</span>
+        </div>
+        <div class="zone-meta"><span class="subnet">10.10.1.0/24</span></div>
+        <div class="zone-services">nginx, fail2ban</div>
+      </div>
+
+      <div class="zone-card" data-zone="app" id="zone-2">
+        <div class="zone-header">
+          <img src="docker/nginx/static/icon-app.svg" alt="" class="zone-icon">
+          <span class="zone-name">APP</span>
+        </div>
+        <div class="zone-meta"><span class="subnet">10.10.2.0/24</span></div>
+        <div class="zone-services">flask-api, gunicorn</div>
+      </div>
+
+      <div class="zone-card" data-zone="data" id="zone-3">
+        <div class="zone-header">
+          <img src="docker/nginx/static/icon-data.svg" alt="" class="zone-icon">
+          <span class="zone-name">DATA</span>
+        </div>
+        <div class="zone-meta"><span class="subnet">10.10.3.0/24</span></div>
+        <div class="zone-services">postgresql, pgcrypto</div>
+      </div>
+
+      <div class="zone-card" data-zone="admin" id="zone-4">
+        <div class="zone-header">
+          <img src="docker/nginx/static/icon-admin.svg" alt="" class="zone-icon">
+          <span class="zone-name">ADMIN</span>
+        </div>
+        <div class="zone-meta"><span class="subnet">10.10.4.0/24</span></div>
+        <div class="zone-services">monitoring, ssh</div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="main">
+      <!-- Metrics -->
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-label">Total Requests</div>
+          <div class="metric-value" id="metricReqs">12,847</div>
+          <div class="metric-change up">+3.2% last hr</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Blocked</div>
+          <div class="metric-value" id="metricBlocked">342</div>
+          <div class="metric-change down">+12 last hr</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Active Sessions</div>
+          <div class="metric-value" id="metricSessions">7</div>
+          <div class="metric-change up">Nominal</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Fail2ban Bans</div>
+          <div class="metric-value" id="metricBans">2</div>
+          <div class="metric-change">Active jails: 1</div>
+        </div>
+      </div>
+
+      <!-- Traffic policy matrix -->
+      <div>
+        <div class="section-title">Traffic Policy Matrix</div>
+        <div class="matrix-container">
+          <table class="matrix">
+            <thead>
+              <tr>
+                <th>FROM \ TO</th>
+                <th>DMZ</th>
+                <th>APP</th>
+                <th>DATA</th>
+                <th>ADMIN</th>
+                <th>EXTERNAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>DMZ</th>
+                <td class="self">---</td>
+                <td class="allow">ALLOW</td>
+                <td class="deny">DENY</td>
+                <td class="deny">DENY</td>
+                <td class="limit">LIMIT</td>
+              </tr>
+              <tr>
+                <th>APP</th>
+                <td class="deny">DENY</td>
+                <td class="self">---</td>
+                <td class="allow">ALLOW</td>
+                <td class="deny">DENY</td>
+                <td class="deny">DENY</td>
+              </tr>
+              <tr>
+                <th>DATA</th>
+                <td class="deny">DENY</td>
+                <td class="deny">DENY</td>
+                <td class="self">---</td>
+                <td class="deny">DENY</td>
+                <td class="deny">DENY</td>
+              </tr>
+              <tr>
+                <th>ADMIN</th>
+                <td class="allow">ALLOW</td>
+                <td class="allow">ALLOW</td>
+                <td class="allow">ALLOW</td>
+                <td class="self">---</td>
+                <td class="deny">DENY</td>
+              </tr>
+              <tr>
+                <th>EXTERNAL</th>
+                <td class="limit">LIMIT</td>
+                <td class="deny">DENY</td>
+                <td class="deny">DENY</td>
+                <td class="deny">DENY</td>
+                <td class="self">---</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Audit log -->
+      <div class="log-container">
+        <div class="log-header">
+          <div class="section-title">Live Audit Log</div>
+          <button class="log-clear" id="logClear" title="Press L to clear">Clear</button>
+        </div>
+        <div class="log-body" id="logBody"></div>
+      </div>
+    </div>
+
+    <!-- Right sidebar -->
+    <div class="right-sidebar">
+      <!-- RBAC Tester -->
+      <div class="panel">
+        <div class="panel-header">RBAC Policy Tester</div>
+        <div class="panel-body">
+          <div class="rbac-field">
+            <label>Role</label>
+            <select id="rbacRole">
+              <option value="admin">admin</option>
+              <option value="analyst">analyst</option>
+              <option value="readonly">readonly</option>
+            </select>
+          </div>
+          <div class="rbac-field">
+            <label>Action</label>
+            <select id="rbacAction">
+              <option value="read">read</option>
+              <option value="write">write</option>
+            </select>
+          </div>
+          <div class="rbac-field">
+            <label>Resource</label>
+            <select id="rbacResource">
+              <option value="users">users</option>
+              <option value="notes">notes</option>
+              <option value="status">status</option>
+            </select>
+          </div>
+          <button class="btn-check" id="rbacCheck" title="Press R to run">Check Policy</button>
+          <div class="rbac-result" id="rbacResult">Select parameters and click Check</div>
+        </div>
+      </div>
+
+      <!-- Role Permissions -->
+      <div class="panel">
+        <div class="panel-header">Role Permissions</div>
+        <div class="panel-body">
+          <table class="perms-table">
+            <thead>
+              <tr><th>Role</th><th>R:users</th><th>R:notes</th><th>W:notes</th><th>R:status</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--amber)">admin</td>
+                <td class="perm-yes">Y</td>
+                <td class="perm-yes">Y</td>
+                <td class="perm-yes">Y</td>
+                <td class="perm-yes">Y</td>
+              </tr>
+              <tr>
+                <td style="color:var(--amber)">analyst</td>
+                <td class="perm-yes">Y</td>
+                <td class="perm-yes">Y</td>
+                <td class="perm-yes">Y</td>
+                <td class="perm-no">-</td>
+              </tr>
+              <tr>
+                <td style="color:var(--amber)">readonly</td>
+                <td class="perm-yes">Y</td>
+                <td class="perm-no">-</td>
+                <td class="perm-no">-</td>
+                <td class="perm-yes">Y</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Fail2ban Bans -->
+      <div class="panel">
+        <div class="panel-header">Fail2ban Active Bans</div>
+        <div class="panel-body">
+          <div class="ban-list" id="banList">
+            <div class="ban-entry">
+              <span class="ban-ip">192.168.1.105</span>
+              <span class="ban-time">2m ago - nginx-limit</span>
+            </div>
+            <div class="ban-entry">
+              <span class="ban-ip">10.0.0.42</span>
+              <span class="ban-time">8m ago - ssh-brute</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard shortcut hints -->
+  <div class="kbd-hints">
+    <span><kbd>R</kbd> RBAC Check</span>
+    <span><kbd>L</kbd> Clear Log</span>
+    <span><kbd>1</kbd>-<kbd>4</kbd> Select Zone</span>
+    <span><kbd>S</kbd> Toggle Sidebar</span>
+  </div>
+
+  <script>
+    // ==================== Auth Gate ====================
+    const token = sessionStorage.getItem('fortress_token');
+    const role = sessionStorage.getItem('fortress_role') || 'unknown';
+    if (!token) window.location.href = 'docker/nginx/static/login.html';
+
+    const userBadge = document.getElementById('userBadge');
+    userBadge.textContent = role.toUpperCase() + ' [logout]';
+    userBadge.addEventListener('click', function() {
+      sessionStorage.removeItem('fortress_token');
+      sessionStorage.removeItem('fortress_role');
+      window.location.href = 'docker/nginx/static/login.html';
+    });
+
+    // ==================== Clock ====================
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // ==================== Collapsible Sidebar ====================
+    const dashboard = document.getElementById('dashboard');
+    document.getElementById('logoToggle').addEventListener('click', function() {
+      dashboard.classList.toggle('sidebar-collapsed');
+    });
+
+    // ==================== Zone Selection ====================
+    const zoneCards = document.querySelectorAll('.zone-card');
+    function selectZone(index) {
+      zoneCards.forEach(c => c.classList.remove('active'));
+      if (zoneCards[index]) zoneCards[index].classList.add('active');
+    }
+    zoneCards.forEach((card, i) => {
+      card.addEventListener('click', () => selectZone(i));
+    });
+
+    // ==================== Audit Log ====================
+    const logBody = document.getElementById('logBody');
+    const logSources = ['DMZ', 'APP', 'DATA', 'ADMIN', 'EXT'];
+    const logTargets = ['DMZ', 'APP', 'DATA', 'ADMIN'];
+    const logActions = ['ALLOW', 'ALLOW', 'ALLOW', 'DENY', 'LIMIT'];
+    let denyTimestamps = [];
+
+    function addLogEntry() {
+      const now = new Date();
+      const time = now.toISOString().substring(11, 19);
+      const src = logSources[Math.floor(Math.random() * logSources.length)];
+      const dst = logTargets[Math.floor(Math.random() * logTargets.length)];
+      const action = logActions[Math.floor(Math.random() * logActions.length)];
+      const port = [80, 443, 5432, 8080, 22][Math.floor(Math.random() * 5)];
+
+      const actionClass = action === 'ALLOW' ? 'action-allow' :
+                          action === 'DENY' ? 'action-deny' : 'action-limit';
+
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML =
+        '<span class="time">' + time + '</span> ' +
+        '<span class="src">' + src + '</span> -> ' + dst + ' :' + port + ' ' +
+        '<span class="' + actionClass + '">' + action + '</span>';
+
+      logBody.insertBefore(entry, logBody.firstChild);
+
+      // Keep max 100 entries
+      while (logBody.children.length > 100) {
+        logBody.removeChild(logBody.lastChild);
+      }
+
+      // Track DENY events for threat level
+      if (action === 'DENY') {
+        denyTimestamps.push(Date.now());
+        updateThreatLevel();
+      }
+    }
+
+    // Start log stream
+    setInterval(addLogEntry, 2000);
+    // Add some initial entries
+    for (let i = 0; i < 8; i++) addLogEntry();
+
+    function clearLog() {
+      logBody.innerHTML = '';
+      denyTimestamps = [];
+      updateThreatLevel();
+    }
+    document.getElementById('logClear').addEventListener('click', clearLog);
+
+    // ==================== Threat Level ====================
+    const threatFill = document.getElementById('threatFill');
+    const threatLabel = document.getElementById('threatLabel');
+
+    function updateThreatLevel() {
+      const tenSecsAgo = Date.now() - 10000;
+      denyTimestamps = denyTimestamps.filter(t => t > tenSecsAgo);
+      const count = denyTimestamps.length;
+
+      if (count > 5) {
+        threatFill.style.width = '90%';
+        threatFill.className = 'threat-fill critical';
+        threatLabel.textContent = 'CRITICAL';
+        threatLabel.style.color = 'var(--red)';
+      } else if (count > 3) {
+        threatFill.style.width = '55%';
+        threatFill.className = 'threat-fill elevated';
+        threatLabel.textContent = 'ELEVATED';
+        threatLabel.style.color = 'var(--amber)';
+      } else {
+        threatFill.style.width = '15%';
+        threatFill.className = 'threat-fill';
+        threatLabel.textContent = 'LOW';
+        threatLabel.style.color = 'var(--green)';
+      }
+    }
+    setInterval(updateThreatLevel, 2000);
+
+    // ==================== RBAC Tester ====================
+    async function runRbacCheck() {
+      const checkRole = document.getElementById('rbacRole').value;
+      const checkAction = document.getElementById('rbacAction').value;
+      const checkResource = document.getElementById('rbacResource').value;
+      const resultEl = document.getElementById('rbacResult');
+
+      resultEl.className = 'rbac-result';
+      resultEl.textContent = 'Checking...';
+
+      // Try real API first
+      try {
+        const res = await fetch('/api/rbac/check', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            check_role: checkRole,
+            check_action: checkAction,
+            check_resource: checkResource
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          resultEl.className = 'rbac-result ' + (data.allowed ? 'allowed' : 'denied');
+          resultEl.textContent = (data.allowed ? 'ALLOWED' : 'DENIED') +
+            ' | ' + data.role + ' -> ' + data.action + ':' + data.resource;
+          return;
+        }
+      } catch (_) {
+        // API not available, use local policy
+      }
+
+      // Local fallback policy
+      var POLICY = {
+        admin: { read: ['users', 'notes', 'status'], write: ['users', 'notes', 'status'] },
+        analyst: { read: ['users', 'notes'], write: ['notes'] },
+        readonly: { read: ['users', 'status'], write: [] }
+      };
+
+      var rolePolicy = POLICY[checkRole];
+      var allowed = rolePolicy && rolePolicy[checkAction] &&
+                    rolePolicy[checkAction].indexOf(checkResource) !== -1;
+
+      resultEl.className = 'rbac-result ' + (allowed ? 'allowed' : 'denied');
+      resultEl.textContent = (allowed ? 'ALLOWED' : 'DENIED') +
+        ' | ' + checkRole + ' -> ' + checkAction + ':' + checkResource +
+        ' (local policy)';
+    }
+
+    document.getElementById('rbacCheck').addEventListener('click', runRbacCheck);
+
+    // ==================== Keyboard Shortcuts ====================
+    document.addEventListener('keydown', function(e) {
+      // Skip if user is in an input/select
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+      switch (e.key.toLowerCase()) {
+        case 'r':
+          e.preventDefault();
+          runRbacCheck();
+          break;
+        case 'l':
+          e.preventDefault();
+          clearLog();
+          break;
+        case 's':
+          e.preventDefault();
+          dashboard.classList.toggle('sidebar-collapsed');
+          break;
+        case '1': selectZone(0); break;
+        case '2': selectZone(1); break;
+        case '3': selectZone(2); break;
+        case '4': selectZone(3); break;
+      }
+    });
+  </script>
+</body>
+</html>

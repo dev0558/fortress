@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <rect width="1920" height="1080" fill="#050709"/>
+  <!-- Grid lines -->
+  <defs>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(200,160,60,0.06)" stroke-width="0.5"/>
+    </pattern>
+    <pattern id="grid-major" width="300" height="300" patternUnits="userSpaceOnUse">
+      <path d="M 300 0 L 0 0 0 300" fill="none" stroke="rgba(200,160,60,0.1)" stroke-width="0.5"/>
+    </pattern>
+    <!-- Crosshair -->
+    <g id="crosshair">
+      <circle cx="0" cy="0" r="20" stroke="rgba(200,160,60,0.08)" stroke-width="0.5" fill="none"/>
+      <circle cx="0" cy="0" r="40" stroke="rgba(200,160,60,0.04)" stroke-width="0.5" fill="none"/>
+      <line x1="-8" y1="0" x2="8" y2="0" stroke="rgba(200,160,60,0.1)" stroke-width="0.5"/>
+      <line x1="0" y1="-8" x2="0" y2="8" stroke="rgba(200,160,60,0.1)" stroke-width="0.5"/>
+    </g>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#grid)"/>
+  <rect width="1920" height="1080" fill="url(#grid-major)"/>
+  <!-- Scattered crosshairs -->
+  <use href="#crosshair" x="480" y="270"/>
+  <use href="#crosshair" x="960" y="540"/>
+  <use href="#crosshair" x="1440" y="810"/>
+  <use href="#crosshair" x="240" y="540"/>
+  <use href="#crosshair" x="1680" y="270"/>
+  <use href="#crosshair" x="720" y="810"/>
+  <use href="#crosshair" x="1200" y="270"/>
+  <use href="#crosshair" x="960" y="180"/>
+  <use href="#crosshair" x="960" y="900"/>
+</svg>

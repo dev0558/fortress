@@ -4,29 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FORTRESS</title>
+    <link rel="stylesheet" href="/static/fortress.css">
     <style>
-        @import url('https://fonts.bunny.net/css?family=jetbrains-mono:400,700');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'JetBrains Mono', monospace;
-            background: #0a0a0a;
-            color: #e0e0e0;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
+            background-image: url('/static/bg-tactical.svg');
+            background-size: cover;
+            background-position: center;
         }
-        .container { text-align: center; max-width: 600px; padding: 2rem; }
-        h1 { font-size: 2.5rem; color: #00ff88; margin-bottom: 0.5rem; }
-        p { font-size: 0.9rem; color: #888; line-height: 1.6; }
-        .status { margin-top: 2rem; color: #00ff88; font-size: 0.8rem; }
+        .landing {
+            text-align: center;
+            padding: 48px 40px;
+            width: 520px;
+            max-width: 90vw;
+        }
+        .logo-mark {
+            font-size: 9px;
+            line-height: 1.3;
+            letter-spacing: 1px;
+            color: var(--amber);
+            text-shadow: 0 0 6px rgba(240,160,48,0.5);
+            white-space: pre;
+            margin-bottom: 24px;
+            filter: blur(0.2px);
+        }
+        .tagline {
+            font-size: 10px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 40px;
+        }
+        .zone-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 32px;
+        }
+        .zone-card {
+            padding: 14px;
+            text-align: left;
+        }
+        .zone-card .zone-name {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .zone-card .zone-subnet {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+        .zone-card .zone-icon {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .zone-dmz  .zone-name { color: var(--amber); }
+        .zone-app  .zone-name { color: var(--green); }
+        .zone-data .zone-name { color: var(--cyan); }
+        .zone-admin .zone-name { color: var(--red); }
+        .enter-link {
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .sys-info {
+            margin-top: 32px;
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+        .sys-info span {
+            color: var(--text-dim);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>FORTRESS</h1>
-        <p>Network Segmentation Lab</p>
-        <div class="status">OPERATIONAL</div>
+    <div class="landing panel">
+        <div class="logo-mark">
+ _____ ___  ____ _____ ____  _____ ____ ____
+|  ___/ _ \|  _ \_   _|  _ \| ____/ ___/ ___|
+| |_ | | | | |_) || | | |_) |  _| \___ \___ \
+|  _|| |_| |  _ &lt; | | |  _ &lt;| |___ ___) |__) |
+|_|   \___/|_| \_\|_| |_| \_\_____|____/____/</div>
+        <div class="tagline">Defense in Depth &middot; Network Segmentation Lab</div>
+
+        <div class="zone-grid">
+            <div class="zone-card panel zone-dmz">
+                <div class="zone-icon">[#]</div>
+                <div class="zone-name"><span class="status-dot online"></span>DMZ</div>
+                <div class="zone-subnet">172.25.1.0/24</div>
+            </div>
+            <div class="zone-card panel zone-app">
+                <div class="zone-icon">{&gt;}</div>
+                <div class="zone-name"><span class="status-dot online"></span>Application</div>
+                <div class="zone-subnet">172.25.2.0/24</div>
+            </div>
+            <div class="zone-card panel zone-data">
+                <div class="zone-icon">[=]</div>
+                <div class="zone-name"><span class="status-dot online"></span>Data</div>
+                <div class="zone-subnet">172.25.3.0/24</div>
+            </div>
+            <div class="zone-card panel zone-admin">
+                <div class="zone-icon">&gt;_</div>
+                <div class="zone-name"><span class="status-dot warning"></span>Admin</div>
+                <div class="zone-subnet">172.25.4.0/24</div>
+            </div>
+        </div>
+
+        <a href="/login.html" class="btn btn-primary enter-link">Authenticate &rarr;</a>
+
+        <div class="sys-info">
+            <span>FORTRESS v2.0</span> &middot; <span id="zoneCount">4</span> zones &middot; <span class="glow-green" style="filter:none">OPERATIONAL</span>
+        </div>
     </div>
 </body>
 </html>

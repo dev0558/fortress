@@ -4,59 +4,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FORTRESS - Authenticate</title>
+<link rel="stylesheet" href="/static/fortress.css">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap');
-
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
   body {
-    font-family: 'JetBrains Mono', monospace;
-    background: #050709;
-    color: #c8c8c8;
     height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    position: relative;
-  }
-
-  /* CRT scanlines */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.15) 2px,
-      rgba(0, 0, 0, 0.15) 4px
-    );
-    pointer-events: none;
-    z-index: 1000;
-  }
-
-  /* CRT flicker */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background: rgba(5, 7, 9, 0.03);
-    animation: flicker 0.15s infinite;
-    pointer-events: none;
-    z-index: 999;
-  }
-
-  @keyframes flicker {
-    0% { opacity: 0.03; }
-    50% { opacity: 0.06; }
-    100% { opacity: 0.03; }
+    background-image: url('/static/bg-tactical.svg');
+    background-size: cover;
+    background-position: center;
   }
 
   .login-card {
-    background: rgba(10, 14, 20, 0.95);
-    border: 1px solid rgba(200, 160, 60, 0.15);
     padding: 48px 40px 40px;
     width: 420px;
     max-width: 90vw;
@@ -67,17 +28,19 @@
   .ascii-logo {
     text-align: center;
     margin-bottom: 32px;
-    color: #c8a03c;
+    color: var(--amber);
     font-size: 11px;
     line-height: 1.3;
     letter-spacing: 1px;
     white-space: pre;
+    text-shadow: 0 0 6px rgba(240,160,48,0.5);
+    filter: blur(0.2px);
   }
 
   .subtitle {
     text-align: center;
     font-size: 10px;
-    color: #555;
+    color: var(--text-dim);
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-bottom: 32px;
@@ -90,35 +53,16 @@
   .field label {
     display: block;
     font-size: 10px;
-    color: #666;
+    color: var(--text-dim);
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 6px;
   }
 
-  .field input {
-    width: 100%;
-    padding: 10px 12px;
-    background: #0a0e14;
-    border: 1px solid #1a1e28;
-    color: #c8c8c8;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .field input:focus {
-    border-color: #c8a03c;
-  }
-
-  .field input::placeholder {
-    color: #333;
-  }
-
   .error-msg {
     font-size: 11px;
-    color: #e74c3c;
+    color: var(--red);
+    text-shadow: 0 0 6px rgba(255,34,68,0.4);
     margin-bottom: 12px;
     min-height: 16px;
   }
@@ -126,25 +70,28 @@
   .btn-auth {
     width: 100%;
     padding: 12px;
-    background: #1a5c2a;
-    border: 1px solid #2a8c3a;
-    color: #4ae168;
-    font-family: 'JetBrains Mono', monospace;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.25);
+    color: var(--green);
+    font-family: var(--font);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 3px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
     margin-top: 8px;
+    border-radius: 2px;
   }
 
   .btn-auth:hover {
-    background: #1e6e32;
+    background: rgba(0,255,136,0.15);
+    border-color: var(--green);
+    box-shadow: 0 0 8px rgba(0,255,136,0.2);
   }
 
   .btn-auth:active {
-    background: #145020;
+    background: rgba(0,255,136,0.05);
   }
 
   .status-bar {
@@ -152,30 +99,42 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background: #0a0e14;
-    border-top: 1px solid #1a1e28;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
     padding: 6px 16px;
     display: flex;
     justify-content: space-between;
     font-size: 10px;
-    color: #444;
+    color: var(--text-muted);
     z-index: 1;
   }
 
   .status-bar .online {
-    color: #4ae168;
+    color: var(--green);
+    text-shadow: 0 0 4px rgba(0,255,136,0.4);
   }
 
   .demo-hint {
     text-align: center;
     margin-top: 20px;
     font-size: 10px;
-    color: #444;
+    color: var(--text-muted);
   }
+
+  .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 1px;
+  }
+  .back-link:hover { color: var(--amber); }
 </style>
 </head>
 <body>
-  <div class="login-card">
+  <div class="login-card panel">
     <div class="ascii-logo">
  _____ ___  ____ _____ ____  _____ ____ ____
 |  ___/ _ \|  _ \_   _|  _ \| ____/ ___/ ___|
@@ -195,17 +154,17 @@
       <div class="error-msg" id="errorMsg"></div>
       <button type="submit" class="btn-auth">Authenticate</button>
     </form>
-    <div class="demo-hint">Demo: admin/admin, analyst/analyst, readonly/readonly</div>
+    <div class="demo-hint">Demo: admin/admin &middot; analyst/analyst &middot; readonly/readonly</div>
+    <a href="/" class="back-link">&larr; Back to overview</a>
   </div>
 
   <div class="status-bar">
     <span>SYS UPTIME: <span id="uptime">0d 0h 0m</span></span>
-    <span class="online">4 ZONES ACTIVE</span>
+    <span class="online">&#9679; 4 ZONES ACTIVE</span>
     <span>FORTRESS v2.0</span>
   </div>
 
   <script>
-    // Uptime counter
     const startTime = Date.now();
     function updateUptime() {
       const elapsed = Date.now() - startTime;
@@ -217,10 +176,9 @@
     }
     setInterval(updateUptime, 60000);
 
-    // Demo users for client-side mock auth
     const DEMO_USERS = {
-      admin: { password: 'admin', role: 'admin' },
-      analyst: { password: 'analyst', role: 'analyst' },
+      admin:    { password: 'admin',    role: 'admin' },
+      analyst:  { password: 'analyst',  role: 'analyst' },
       readonly: { password: 'readonly', role: 'readonly' }
     };
 
@@ -231,7 +189,6 @@
       const errEl = document.getElementById('errorMsg');
       errEl.textContent = '';
 
-      // Try real API first, fall back to demo
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -242,18 +199,15 @@
           const data = await res.json();
           sessionStorage.setItem('fortress_token', data.token);
           sessionStorage.setItem('fortress_role', data.role);
-          window.location.href = '/fortress-v2.html';
+          window.location.href = '/static/dashboard.html';
           return;
         }
-      } catch (_) {
-        // API not available, use demo auth
-      }
+      } catch (_) {}
 
-      // Demo fallback
       if (DEMO_USERS[user] && DEMO_USERS[user].password === pass) {
         sessionStorage.setItem('fortress_token', 'demo-jwt-' + user + '-' + Date.now());
         sessionStorage.setItem('fortress_role', DEMO_USERS[user].role);
-        window.location.href = '/fortress-v2.html';
+        window.location.href = '/static/dashboard.html';
       } else {
         errEl.textContent = 'ACCESS DENIED: Invalid credentials';
       }

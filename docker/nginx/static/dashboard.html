@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORTRESS - Dashboard</title>
+<link rel="stylesheet" href="/static/fortress.css">
+<style>
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* --- Top Bar --- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-panel);
+    font-size: 11px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-brand {
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--amber);
+    text-shadow: 0 0 6px rgba(240,160,48,0.4);
+  }
+  .topbar-nav { display: flex; gap: 20px; }
+  .topbar-nav a {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .topbar-nav a:hover, .topbar-nav a.active { color: var(--amber); }
+  .topbar-user {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  .topbar-user .role { color: var(--green); }
+
+  /* --- Main Layout --- */
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* --- Sidebar --- */
+  .sidebar {
+    width: 220px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-panel);
+    padding: 16px 0;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 20px;
+  }
+  .sidebar-section h4 {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border-dim);
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+  .sidebar-item:hover { background: rgba(240,160,48,0.05); color: var(--text); }
+  .sidebar-item.active { background: rgba(240,160,48,0.08); color: var(--amber); }
+  .sidebar-item .si-icon { width: 20px; margin-right: 8px; text-align: center; font-size: 12px; }
+
+  /* --- Content --- */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  /* --- Metric Cards --- */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .metric-card {
+    padding: 16px;
+  }
+  .metric-card .metric-label {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .metric-card .metric-value {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .metric-card .metric-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  /* --- Zone Map --- */
+  .zone-map {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .zone-panel { padding: 16px; }
+  .zone-panel .zone-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .zone-panel .zone-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .zone-panel .zone-detail {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .zone-panel .zone-detail span { color: var(--text); }
+
+  /* --- Event Log --- */
+  .event-log {
+    max-height: 280px;
+    overflow-y: auto;
+  }
+  .event-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    font-size: 11px;
+    border-bottom: 1px solid var(--border-dim);
+  }
+  .event-row:hover { background: rgba(240,160,48,0.02); }
+  .event-time {
+    color: var(--text-muted);
+    width: 80px;
+    flex-shrink: 0;
+  }
+  .event-type {
+    width: 70px;
+    flex-shrink: 0;
+  }
+  .event-msg { color: var(--text-dim); flex: 1; }
+
+  /* --- Bottom Bar --- */
+  .bottombar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-panel);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .bottombar .online { color: var(--green); text-shadow: 0 0 4px rgba(0,255,136,0.3); }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .zone-map { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-brand">> FORTRESS</div>
+    <div class="topbar-nav">
+      <a href="#" class="active">Dashboard</a>
+      <a href="#">Zones</a>
+      <a href="#">Rules</a>
+      <a href="#">Audit</a>
+    </div>
+    <div class="topbar-user">
+      <span id="userRole" class="role">ADMIN</span> &middot; <a href="/" style="color:var(--text-dim);text-decoration:none;font-size:10px" id="logoutBtn">LOGOUT</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-section">
+        <h4>Zones</h4>
+        <div class="sidebar-item active"><span class="si-icon">[#]</span> DMZ</div>
+        <div class="sidebar-item"><span class="si-icon">{&gt;}</span> Application</div>
+        <div class="sidebar-item"><span class="si-icon">[=]</span> Data</div>
+        <div class="sidebar-item"><span class="si-icon">&gt;_</span> Admin</div>
+      </div>
+      <div class="sidebar-section">
+        <h4>Services</h4>
+        <div class="sidebar-item"><span class="si-icon">&#9632;</span> nginx</div>
+        <div class="sidebar-item"><span class="si-icon">&#9632;</span> flask-api</div>
+        <div class="sidebar-item"><span class="si-icon">&#9632;</span> postgres</div>
+      </div>
+      <div class="sidebar-section">
+        <h4>Security</h4>
+        <div class="sidebar-item"><span class="si-icon">~</span> iptables</div>
+        <div class="sidebar-item"><span class="si-icon">~</span> nftables</div>
+        <div class="sidebar-item"><span class="si-icon">~</span> fail2ban</div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <!-- Metrics -->
+      <div class="metrics">
+        <div class="metric-card panel">
+          <div class="metric-label">Active Zones</div>
+          <div class="metric-value glow-green">4</div>
+          <div class="metric-sub">DMZ / App / Data / Admin</div>
+        </div>
+        <div class="metric-card panel">
+          <div class="metric-label">Containers</div>
+          <div class="metric-value glow-amber">3</div>
+          <div class="metric-sub">All healthy</div>
+        </div>
+        <div class="metric-card panel">
+          <div class="metric-label">Firewall Rules</div>
+          <div class="metric-value glow-cyan">24</div>
+          <div class="metric-sub">iptables + nftables</div>
+        </div>
+        <div class="metric-card panel">
+          <div class="metric-label">Blocked Today</div>
+          <div class="metric-value glow-red" id="blockedCount">147</div>
+          <div class="metric-sub">fail2ban active</div>
+        </div>
+      </div>
+
+      <!-- Zone Map -->
+      <div class="zone-map">
+        <div class="zone-panel panel">
+          <div class="zone-header">
+            <div class="zone-title" style="color:var(--amber)"><span class="status-dot online"></span> DMZ Zone</div>
+            <span class="badge badge-green">Active</span>
+          </div>
+          <div class="zone-detail">Subnet: <span>172.25.1.0/24</span></div>
+          <div class="zone-detail">Gateway: <span>172.25.1.1</span></div>
+          <div class="zone-detail">Services: <span>nginx (172.25.1.10)</span></div>
+          <div class="zone-detail">Access: <span class="badge badge-amber" style="font-size:9px">External</span></div>
+        </div>
+        <div class="zone-panel panel">
+          <div class="zone-header">
+            <div class="zone-title" style="color:var(--green)"><span class="status-dot online"></span> Application Zone</div>
+            <span class="badge badge-green">Active</span>
+          </div>
+          <div class="zone-detail">Subnet: <span>172.25.2.0/24</span></div>
+          <div class="zone-detail">Gateway: <span>172.25.2.1</span></div>
+          <div class="zone-detail">Services: <span>flask-api (172.25.2.10)</span></div>
+          <div class="zone-detail">Access: <span class="badge badge-cyan" style="font-size:9px">Internal</span></div>
+        </div>
+        <div class="zone-panel panel">
+          <div class="zone-header">
+            <div class="zone-title" style="color:var(--cyan)"><span class="status-dot online"></span> Data Zone</div>
+            <span class="badge badge-green">Active</span>
+          </div>
+          <div class="zone-detail">Subnet: <span>172.25.3.0/24</span></div>
+          <div class="zone-detail">Gateway: <span>172.25.3.1</span></div>
+          <div class="zone-detail">Services: <span>postgres (172.25.3.10)</span></div>
+          <div class="zone-detail">Access: <span class="badge badge-cyan" style="font-size:9px">Internal</span></div>
+        </div>
+        <div class="zone-panel panel">
+          <div class="zone-header">
+            <div class="zone-title" style="color:var(--red)"><span class="status-dot warning"></span> Admin Zone</div>
+            <span class="badge badge-amber">Restricted</span>
+          </div>
+          <div class="zone-detail">Subnet: <span>172.25.4.0/24</span></div>
+          <div class="zone-detail">Gateway: <span>172.25.4.1</span></div>
+          <div class="zone-detail">Services: <span>monitoring (planned)</span></div>
+          <div class="zone-detail">Access: <span class="badge badge-red" style="font-size:9px">Privileged</span></div>
+        </div>
+      </div>
+
+      <!-- Event Log -->
+      <div class="panel">
+        <div class="panel-header">Event Log</div>
+        <div class="event-log" id="eventLog">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Bar -->
+  <div class="bottombar">
+    <span>SYS UPTIME: <span id="uptime">0d 0h 0m 0s</span></span>
+    <span class="online">&#9679; ALL SYSTEMS NOMINAL</span>
+    <span>FORTRESS v2.0 &middot; <span id="clock"></span></span>
+  </div>
+
+  <script>
+    // Auth guard
+    (function() {
+      const token = sessionStorage.getItem('fortress_token');
+      if (!token) { window.location.href = '/login.html'; return; }
+      const role = sessionStorage.getItem('fortress_role') || 'unknown';
+      document.getElementById('userRole').textContent = role.toUpperCase();
+    })();
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', function(e) {
+      e.preventDefault();
+      sessionStorage.clear();
+      window.location.href = '/';
+    });
+
+    // Uptime
+    const startTime = Date.now();
+    function updateUptime() {
+      const s = Math.floor((Date.now() - startTime) / 1000);
+      const sec = s % 60, min = Math.floor(s / 60) % 60;
+      const hr = Math.floor(s / 3600) % 24, day = Math.floor(s / 86400);
+      document.getElementById('uptime').textContent =
+        day + 'd ' + hr + 'h ' + min + 'm ' + sec + 's';
+    }
+    setInterval(updateUptime, 1000);
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        now.toISOString().slice(11, 19) + 'Z';
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Simulated blocked count
+    let blocked = 147;
+    setInterval(function() {
+      blocked += Math.floor(Math.random() * 3);
+      document.getElementById('blockedCount').textContent = blocked;
+    }, 8000);
+
+    // Event log simulation
+    const EVENT_TYPES = [
+      { type: 'INFO',  cls: 'glow-green' },
+      { type: 'WARN',  cls: 'glow-amber' },
+      { type: 'BLOCK', cls: 'glow-red' },
+      { type: 'AUTH',  cls: 'glow-cyan' },
+    ];
+    const EVENT_MSGS = [
+      'Zone isolation check passed [DMZ -> App: DENY]',
+      'iptables rule hit: DROP 203.0.113.42 -> 172.25.1.10:443',
+      'fail2ban: banned 198.51.100.7 (nginx-fortress)',
+      'Health check OK: flask-api response 12ms',
+      'Health check OK: postgres connections 3/100',
+      'nftables counter: dmz_to_data packets=0 (expected)',
+      'Container nginx CPU: 2.1% MEM: 18MB',
+      'Certificate renewal check: 47 days remaining',
+      'Rate limit triggered: 10.0.0.5 exceeded 10req/s',
+      'Segmentation test: admin->data BLOCKED (correct)',
+      'Auth attempt: user=analyst from 172.25.4.2 [OK]',
+      'Audit log rotation completed: 2.4MB archived',
+    ];
+    const logEl = document.getElementById('eventLog');
+    function addEvent() {
+      const ev = EVENT_TYPES[Math.floor(Math.random() * EVENT_TYPES.length)];
+      const msg = EVENT_MSGS[Math.floor(Math.random() * EVENT_MSGS.length)];
+      const now = new Date();
+      const time = now.toISOString().slice(11, 19);
+      const row = document.createElement('div');
+      row.className = 'event-row';
+      row.innerHTML =
+        '<span class="event-time">' + time + '</span>' +
+        '<span class="event-type ' + ev.cls + '">' + ev.type + '</span>' +
+        '<span class="event-msg">' + msg + '</span>';
+      logEl.insertBefore(row, logEl.firstChild);
+      if (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
+    }
+    // Seed initial events
+    for (let i = 0; i < 12; i++) addEvent();
+    setInterval(addEvent, 4000 + Math.random() * 3000);
+  </script>
+</body>
+</html>

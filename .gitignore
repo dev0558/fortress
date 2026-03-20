@@ -1,0 +1,39 @@
+# ==========================================================================
+# FORTRESS .gitignore
+# ==========================================================================
+
+# Secrets and environment files
+.env
+*.env.local
+
+# Terraform
+terraform.tfvars
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docker volumes (local data)
+pgdata/

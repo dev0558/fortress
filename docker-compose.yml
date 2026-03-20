@@ -1,0 +1,111 @@
+version: "3.9"
+
+networks:
+  dmz:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.1.0/24
+  app:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.2.0/24
+  data:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.3.0/24
+  admin:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.4.0/24
+
+services:
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    container_name: fortress-nginx
+    ports:
+      - "8080:80"
+    networks:
+      dmz:
+        ipv4_address: 10.10.1.10
+      app:
+        ipv4_address: 10.10.2.10
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    restart: unless-stopped
+    depends_on:
+      flask-api:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  flask-api:
+    build:
+      context: ./docker/app
+      dockerfile: Dockerfile
+    container_name: fortress-flask-api
+    networks:
+      app:
+        ipv4_address: 10.10.2.20
+      data:
+        ipv4_address: 10.10.3.20
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - ./policies:/app/policies:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: fortress-postgres
+    networks:
+      data:
+        ipv4_address: 10.10.3.30
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./docker/db/init:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  pgdata:
+    driver: local

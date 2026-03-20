@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 48" fill="none">
+  <text x="4" y="36" font-family="'Courier New', monospace" font-size="32" font-weight="bold" fill="#c8a03c" letter-spacing="6">FORTRESS</text>
+  <line x1="0" y1="44" x2="280" y2="44" stroke="#c8a03c" stroke-width="1" opacity="0.3"/>
+  <line x1="0" y1="4" x2="280" y2="4" stroke="#c8a03c" stroke-width="1" opacity="0.3"/>
+</svg>

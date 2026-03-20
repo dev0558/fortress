@@ -1,0 +1,34 @@
+{
+  "version": "1.0",
+  "roles": [
+    {
+      "name": "admin",
+      "description": "Full administrative access to all resources",
+      "permissions": [
+        { "action": "read", "resource": "users" },
+        { "action": "write", "resource": "users" },
+        { "action": "read", "resource": "notes" },
+        { "action": "write", "resource": "notes" },
+        { "action": "read", "resource": "status" },
+        { "action": "write", "resource": "status" }
+      ]
+    },
+    {
+      "name": "analyst",
+      "description": "Read users, read and write notes",
+      "permissions": [
+        { "action": "read", "resource": "users" },
+        { "action": "read", "resource": "notes" },
+        { "action": "write", "resource": "notes" }
+      ]
+    },
+    {
+      "name": "readonly",
+      "description": "Read-only access to users and system status",
+      "permissions": [
+        { "action": "read", "resource": "users" },
+        { "action": "read", "resource": "status" }
+      ]
+    }
+  ]
+}
